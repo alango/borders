@@ -377,15 +377,22 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
 
           {/* Map toggle */}
           <div className="flex items-center gap-2">
-            <input
-              id="showMap"
-              type="checkbox"
-              checked={showMap}
-              onChange={(e) => setShowMap(e.target.checked)}
-              className="cursor-pointer"
-            />
+            <button
+              role="switch"
+              aria-checked={showMap}
+              onClick={() => setShowMap((v) => !v)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                showMap ? "bg-primary" : "bg-input"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-lg transition-transform ${
+                  showMap ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
             <label
-              htmlFor="showMap"
+              onClick={() => setShowMap((v) => !v)}
               className="text-xs text-muted-foreground cursor-pointer"
             >
               Show map
@@ -443,8 +450,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                 onClick={() => setPhase("revealed")}
                 className="w-full"
               >
-                Reveal Answer{" "}
-                <span className="text-xs opacity-60 ml-1">[R]</span>
+                Reveal Answer
               </Button>
             </>
           )}
@@ -540,8 +546,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                     variant="outline"
                     className="w-full"
                   >
-                    Next{" "}
-                    <span className="text-xs opacity-60 ml-1">[N]</span>
+                    Next
                   </Button>
                 ) : isNew ? (
                   <>
@@ -549,8 +554,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                       onClick={skipCard}
                       variant="outline"
                     >
-                      Ignore{" "}
-                      <span className="text-xs opacity-60">[I]</span>
+                      Ignore
                     </Button>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -559,8 +563,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                           variant="outline"
                           className="border-green-200 hover:bg-green-50"
                         >
-                          Learn{" "}
-                          <span className="text-xs opacity-60">[L]</span>
+                          Learn
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{formatInterval(1)}</TooltipContent>
@@ -572,8 +575,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                           variant="outline"
                           className="border-blue-200 hover:bg-blue-50"
                         >
-                          Already know{" "}
-                          <span className="text-xs opacity-60">[A]</span>
+                          Already know
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{formatInterval(32)}</TooltipContent>
@@ -588,8 +590,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                           variant="outline"
                           className="border-red-200 hover:bg-red-50"
                         >
-                          Incorrect{" "}
-                          <span className="text-xs opacity-60">[I]</span>
+                          Incorrect
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -603,8 +604,7 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                           variant="outline"
                           className="border-green-200 hover:bg-green-50"
                         >
-                          Correct{" "}
-                          <span className="text-xs opacity-60">[C]</span>
+                          Correct
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>

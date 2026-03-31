@@ -29,58 +29,56 @@ export default async function Home() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Check if user has been seeded yet
+  // Seed country records on first visit
   const [seedCheck] = await db
     .select({ count: sql<number>`count(*)` })
     .from(userCountries)
     .where(eq(userCountries.userId, userId));
 
-  const totalCount = Number(seedCheck?.count ?? 0);
-
-  // If seeded, get stats
-  let dueCount = 0;
-  let newCount = 0;
-  let intervalRows: { bucket: string; count: number }[] = [];
-
-  if (totalCount > 0) {
-    const [stats] = await db
-      .select({
-        dueCount: sql<number>`count(*) filter (where ${userCountries.dueDate} <= ${today} and ${userCountries.lastReviewed} is not null)`,
-        newCount: sql<number>`count(*) filter (where ${userCountries.lastReviewed} is null)`,
-      })
-      .from(userCountries)
-      .where(eq(userCountries.userId, userId));
-
-    dueCount = Number(stats?.dueCount ?? 0);
-    newCount = Number(stats?.newCount ?? 0);
-
-    intervalRows = await db
-      .select({
-        bucket: sql<string>`case
-          when ${userCountries.intervalDays} < 2 then '1d'
-          when ${userCountries.intervalDays} < 4 then '2d'
-          when ${userCountries.intervalDays} < 8 then '4d'
-          when ${userCountries.intervalDays} < 16 then '8d'
-          when ${userCountries.intervalDays} < 32 then '16d'
-          else '32d+'
-        end`,
-        count: sql<number>`count(*)`,
-      })
-      .from(userCountries)
-      .where(
-        sql`${userCountries.userId} = ${userId} and ${userCountries.lastReviewed} is not null`
-      )
-      .groupBy(
-        sql`case
-          when ${userCountries.intervalDays} < 2 then '1d'
-          when ${userCountries.intervalDays} < 4 then '2d'
-          when ${userCountries.intervalDays} < 8 then '4d'
-          when ${userCountries.intervalDays} < 16 then '8d'
-          when ${userCountries.intervalDays} < 32 then '16d'
-          else '32d+'
-        end`
-      );
+  if (Number(seedCheck?.count ?? 0) === 0) {
+    const { COUNTRIES } = await import("@/lib/countries");
+    await db.insert(userCountries).values(
+      COUNTRIES.map((c) => ({ userId, countryId: c.id }))
+    );
   }
+
+  const [stats] = await db
+    .select({
+      dueCount: sql<number>`count(*) filter (where ${userCountries.dueDate} <= ${today} and ${userCountries.lastReviewed} is not null)`,
+      newCount: sql<number>`count(*) filter (where ${userCountries.lastReviewed} is null)`,
+    })
+    .from(userCountries)
+    .where(eq(userCountries.userId, userId));
+
+  const dueCount = Number(stats?.dueCount ?? 0);
+  const newCount = Number(stats?.newCount ?? 0);
+
+  const intervalRows = await db
+    .select({
+      bucket: sql<string>`case
+        when ${userCountries.intervalDays} < 2 then '1d'
+        when ${userCountries.intervalDays} < 4 then '2d'
+        when ${userCountries.intervalDays} < 8 then '4d'
+        when ${userCountries.intervalDays} < 16 then '8d'
+        when ${userCountries.intervalDays} < 32 then '16d'
+        else '32d+'
+      end`,
+      count: sql<number>`count(*)`,
+    })
+    .from(userCountries)
+    .where(
+      sql`${userCountries.userId} = ${userId} and ${userCountries.lastReviewed} is not null`
+    )
+    .groupBy(
+      sql`case
+        when ${userCountries.intervalDays} < 2 then '1d'
+        when ${userCountries.intervalDays} < 4 then '2d'
+        when ${userCountries.intervalDays} < 8 then '4d'
+        when ${userCountries.intervalDays} < 16 then '8d'
+        when ${userCountries.intervalDays} < 32 then '16d'
+        else '32d+'
+      end`
+    );
 
   const bucketOrder = ["1d", "2d", "4d", "8d", "16d", "32d+"];
   const rowMap = new Map(
@@ -170,12 +168,6 @@ export default async function Home() {
                 })}
               </div>
             </div>
-          )}
-
-          {totalCount === 0 && (
-            <p className="text-sm text-muted-foreground text-center">
-              Start a review to begin learning country borders.
-            </p>
           )}
 
           <form
