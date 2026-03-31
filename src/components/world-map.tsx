@@ -39,10 +39,6 @@ export function WorldMap({
   labels,
 }: WorldMapProps) {
   const [geoData, setGeoData] = useState<GeoCollection | null>(null);
-  const [projConfig, setProjConfig] = useState<{
-    center: [number, number];
-    scale: number;
-  }>({ center: [0, 20], scale: 150 });
 
   // Fetch and parse topology once
   useEffect(() => {
@@ -55,10 +51,10 @@ export function WorldMap({
       });
   }, []);
 
-  // Recompute projection whenever the highlighted country changes
-  useEffect(() => {
-    if (!geoData || !highlightCountryId) return;
-    setProjConfig(computeProjection(geoData, highlightCountryId));
+  // Compute projection synchronously so zoom is always correct on first render
+  const projConfig = useMemo(() => {
+    if (!geoData || !highlightCountryId) return { center: [0, 20] as [number, number], scale: 150 };
+    return computeProjection(geoData, highlightCountryId);
   }, [geoData, highlightCountryId]);
 
   // Compute label positions from centroids
