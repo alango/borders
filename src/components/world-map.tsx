@@ -18,11 +18,14 @@ interface WorldMapProps {
 type GeoFeature = Feature<Geometry> & { id?: string | number };
 type GeoCollection = { type: "FeatureCollection"; features: GeoFeature[] };
 
+const normalizeId = (id: string | number | undefined) =>
+  String(id ?? "").replace(/^0+/, "");
+
 function computeProjection(
   geoData: GeoCollection,
   countryId: string
 ): { center: [number, number]; scale: number } {
-  const geo = geoData.features.find((f) => String(f.id) === countryId);
+  const geo = geoData.features.find((f) => normalizeId(f.id) === normalizeId(countryId));
   if (!geo) return { center: [0, 20], scale: 150 };
 
   const [lon, lat] = geoCentroid(geo);
@@ -61,7 +64,7 @@ export function WorldMap({
   const labelMarkers = useMemo(() => {
     if (!geoData || !labels) return [];
     return Object.entries(labels).flatMap(([id, name]) => {
-      const geo = geoData.features.find((f) => String(f.id) === id);
+      const geo = geoData.features.find((f) => normalizeId(f.id) === normalizeId(id));
       if (!geo) return [];
       const [lon, lat] = geoCentroid(geo);
       return [{ id, name, coordinates: [lon, lat] as [number, number] }];
@@ -77,8 +80,8 @@ export function WorldMap({
       <Geographies geography={geoData ?? GEO_URL}>
         {({ geographies }) =>
           geographies.map((geo) => {
-            const isMain = String(geo.id) === highlightCountryId;
-            const isBorder = borderCountryIds.includes(String(geo.id));
+            const isMain = normalizeId(geo.id) === normalizeId(highlightCountryId);
+            const isBorder = borderCountryIds.some((id) => normalizeId(geo.id) === normalizeId(id));
             return (
               <Geography
                 key={geo.rsmKey}
