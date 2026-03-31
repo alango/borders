@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
           isNull(userCountries.lastReviewed)
         )
       )
-      .orderBy(sql`random()`)
-      .limit(20);
+      .orderBy(sql`random()`);
   } else {
     // All: due first, then new
     const due = await db
@@ -76,8 +75,7 @@ export async function GET(request: NextRequest) {
           isNull(userCountries.lastReviewed)
         )
       )
-      .orderBy(sql`random()`)
-      .limit(20);
+      .orderBy(sql`random()`);
 
     rows = [...due, ...newCards];
   }

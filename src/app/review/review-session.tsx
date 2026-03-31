@@ -407,6 +407,19 @@ export function ReviewSession({ mode }: { mode?: "due" | "new" }) {
                 borderCountryIds={
                   phase === "revealed" ? currentCard.borderNumericIds : []
                 }
+                labels={
+                  phase === "revealed"
+                    ? {
+                        [currentCard.numericId]: currentCard.countryName,
+                        ...Object.fromEntries(
+                          currentCard.borders.map((b, i) => [
+                            currentCard.borderNumericIds[i],
+                            COUNTRY_MAP.get(b)?.name ?? b,
+                          ])
+                        ),
+                      }
+                    : undefined
+                }
               />
             </div>
           )}

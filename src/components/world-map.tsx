@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { useEffect, useMemo, useState } from "react";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import { feature } from "topojson-client";
 import { geoCentroid, geoBounds } from "d3-geo";
 import type { Feature, Geometry } from "geojson";
@@ -10,8 +10,9 @@ const GEO_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 interface WorldMapProps {
-  highlightCountryId: string; // numeric ISO id
-  borderCountryIds?: string[]; // shown in orange after reveal
+  highlightCountryId: string;              // numeric ISO id
+  borderCountryIds?: string[];             // shown in orange after reveal
+  labels?: Record<string, string>;         // numericId -> display name
 }
 
 type GeoFeature = Feature<Geometry> & { id?: string | number };
@@ -27,7 +28,6 @@ function computeProjection(
   const [lon, lat] = geoCentroid(geo);
   const [[x0, y0], [x1, y1]] = geoBounds(geo);
   const maxSpan = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
-  // scale = how many pixels per radian; aim for country to fill ~60% of viewport
   const scale = Math.min(3000, Math.max(150, 13750 / maxSpan));
 
   return { center: [lon, lat], scale };
@@ -36,6 +36,7 @@ function computeProjection(
 export function WorldMap({
   highlightCountryId,
   borderCountryIds = [],
+  labels,
 }: WorldMapProps) {
   const [geoData, setGeoData] = useState<GeoCollection | null>(null);
   const [projConfig, setProjConfig] = useState<{
@@ -59,6 +60,17 @@ export function WorldMap({
     if (!geoData || !highlightCountryId) return;
     setProjConfig(computeProjection(geoData, highlightCountryId));
   }, [geoData, highlightCountryId]);
+
+  // Compute label positions from centroids
+  const labelMarkers = useMemo(() => {
+    if (!geoData || !labels) return [];
+    return Object.entries(labels).flatMap(([id, name]) => {
+      const geo = geoData.features.find((f) => String(f.id) === id);
+      if (!geo) return [];
+      const [lon, lat] = geoCentroid(geo);
+      return [{ id, name, coordinates: [lon, lat] as [number, number] }];
+    });
+  }, [geoData, labels]);
 
   return (
     <ComposableMap
@@ -88,6 +100,22 @@ export function WorldMap({
           })
         }
       </Geographies>
+      {labelMarkers.map(({ id, name, coordinates }) => (
+        <Marker key={id} coordinates={coordinates}>
+          <text
+            textAnchor="middle"
+            fontSize={20}
+            fontWeight="700"
+            fill="#1e293b"
+            stroke="#ffffff"
+            strokeWidth={5}
+            paintOrder="stroke"
+            style={{ pointerEvents: "none", userSelect: "none" }}
+          >
+            {name}
+          </text>
+        </Marker>
+      ))}
     </ComposableMap>
   );
 }
